@@ -41,10 +41,11 @@ typedef struct {
 	
 	uint8_t  baudrate_reg;//0x3  //1:2400  2:4800 3:9600 4:19200  5:38400  6:115200  波特率
 	uint8_t  checkbit_reg;//0x4  // 校验位   1:无校验 2：奇校验  3：偶校验
-    uint8_t  stopbit_reg; //0x5   // 停止位  1:1位 2：1.5位   3：2位
+  uint8_t  stopbit_reg; //0x5   // 停止位  1:1位 2：1.5位   3：2位
     
-    Fr_low_level_config_type  fr_conf;
-    T_slot_conf gt_slot_conf[MAX_SLOT_BUF_SIZE];  //最大50个    如果序号为-1 表示未使用
+  Fr_low_level_config_type  fr_conf;
+  T_slot_conf gt_slot_conf[MAX_SLOT_BUF_SIZE];  //最大50个    如果序号为-1 表示未使用
+  
 }T_MODBUS_REG;
 
 #pragma pack()

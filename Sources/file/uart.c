@@ -2,11 +2,16 @@
 #include "derivative.h"      /* derivative-specific definitions */
 
 #include "modbus_rtu.h"
+#include "string.h"
+
 extern uint8_t start_recv_data ;  // 表示可以接收数据
 extern uint8_t recv_data_complete; //表示接收数据完成
 extern T_MODBUS gt_modbus;
 #define  BUS_CLOCK		   32000000	   //总线频率 
 #define  BAUD		       9600
+
+
+uint8_t g_SecFlag=0;    //秒标志位
 
 uart_recv_data recvdata;
 /* USART初始化 */
@@ -41,19 +46,29 @@ unsigned char SCI_receive(void)
 #pragma CODE_SEG __NEAR_SEG NON_BANKED
 
 
+uint16_t TimeSecCnt=0;
 /*************************************************************/
 /*                      计时中断函数                         */
 /*************************************************************/
 interrupt void PIT_INTER(void)
 {
-  if(TFLG1_C0F == 1){
+
+  if(TFLG1_C0F == 1)
+  {
     TFLG1_C0F = 1;
     PITCE_PCE0=0;     //PIT第0通道计数器工
     TIE   = 0x00;  
     start_recv_data=1;
     recv_data_complete=1;
+    TimeSecCnt++;
+    if(TimeSecCnt>2000) 
+    {
+      TimeSecCnt=0;
+      
+    }
+    g_SecFlag=1;
   }
-  /*
+   /*
   if(PITTF_PTF0 == 1){
     
     PITTF_PTF0 = 1; //表示一帧数据处理完成
@@ -63,7 +78,20 @@ interrupt void PIT_INTER(void)
     SCI_send(gt_modbus.rx_count);
   }
   
-  */
+  
+  
+    if(PITTF_PTF0 == 1) 
+    {
+      
+      PITTF_PTF0 = 1;    //清除标志位
+      
+          TimeSecCnt++;
+      if(TimeSecCnt>2000) 
+      {
+        TimeSecCnt=0;
+        g_SecFlag=1;
+      }
+    }    */
 }
 
 
@@ -101,8 +129,11 @@ void send_data(unsigned char *putchar,int len){
     }
 }
 
+
 //用于判断一帧结束的定时器
-void TIM_Init(void){
+void TIM_Init(void)
+{
+
 
    PITMUX_PMUX0=0;   //第0通道使用微计数器0
    PITCFLMT=0x80;    //使能周期中断定时器
@@ -112,8 +143,9 @@ void TIM_Init(void){
    PITCE_PCE0=0;     //PIT第0通道计数器工作 
    PITINTE_PINTE0=1; //PIT0通道定时器定时中断被使能
    TIE   = 0x00;  
-}
 
+
+}
 
 
 void uart1_init(uint16_t baud,uint16_t stop_bit,uint16_t check_bit){
@@ -192,8 +224,44 @@ void uart1_init(uint16_t baud,uint16_t stop_bit,uint16_t check_bit){
   SCI0BD = BUS_CLOCK/16/temp_baud;   //设置SCI0波特率为9600
   SCI0CR1 = 0x00;        //设置SCI0为正常模式，八位数据位，无奇偶校验
   SCI0CR2 = 0x2c;        //允许接收和发送数据，允许接收中断功能 
-  
-  
+}
+
+
+void TERMIO_PutChar(char C)
+{ 
+  while(!SCI1SR1_TDRE);       //等待发送数据寄存器（缓冲器）为空
+    SCI1DRL = C;
+}
+
+
+void uart2_send(unsigned char data) 
+{
+  while(!SCI1SR1_TDRE);       //等待发送数据寄存器（缓冲器）为空
+    SCI1DRL = data;
+}
+
+
+void uart2Send(unsigned char *putchar,int len){
+    int i;
+    if(len<=0){
+        return;   
+    }
+    
+    for(i=0;i<len;i++){
+        uart2_send(*putchar++);  
+    }
+}
+
+void SendStr(unsigned char *Str) 
+{
+   uart2Send(Str,strlen(Str));
+}
+
+void uart2_init(void)
+{
+  SCI1BD = BUS_CLOCK/16/115200;   //设置SCI0波特率为9600
+  SCI1CR1 = 0x00;        //设置SCI0为正常模式，八位数据位，无奇偶校验
+  SCI1CR2 = 0x2c;        //允许接收和发送数据，允许接收中断功能 
 }
 
 void registerRecvFunc(uart_recv_data func){

@@ -47,6 +47,7 @@ for accessing the global addresses on the MC9S12 microcontrollers */
 //#define FR_REG_FAR             /* __far modifier is not used for an access to FlexRay registers */
 //#define FR_DATA_FAR            /* __far modifier is not used for an access to FlexRay memory */
 
+#include <stdio.h>
 
 typedef unsigned char       boolean;
 
@@ -80,6 +81,7 @@ typedef uint8 Fr_return_type;
 #define FR_NOT_SUCCESS  0
 #define FR_SUCCESS      1
 
+/*
 #ifndef TRUE
     #define TRUE ((boolean) 1)
 #endif
@@ -91,5 +93,6 @@ typedef uint8 Fr_return_type;
 #ifndef NULL
     #define NULL (void *)(0)
 #endif
+*/
 
 #endif /* FR_UNIFIED_TYPES */

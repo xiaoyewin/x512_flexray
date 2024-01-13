@@ -5,6 +5,9 @@
 
 typedef void (*uart_recv_data)(uint8_t );
 
+
+extern uint8_t g_SecFlag;    //秒标志位
+
 //这边需要弄个环形结构体
 #define MAX_BUF_SIZE  200   
 typedef struct
@@ -27,5 +30,11 @@ void data_buf_init(void);
 
 //注册接收的回调函数
 void registerRecvFunc(uart_recv_data func);
+
+void uart2Send(unsigned char *putchar,int len);
+void uart2_init(void);
+
+
+
 #endif
 

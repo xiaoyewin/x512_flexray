@@ -15,6 +15,8 @@ E-mail: 2008f.d@163.com
 #include "modbus_rtu.h"
 #include "dflash.h"
 #include "Fr_UNIFIED_types.h" 
+#include "stdio.h"
+
 extern T_DATA_BUFFER  g_recv_data_buf ;
 
 
@@ -26,8 +28,10 @@ extern T_Recv_Data_Buf gt_recv_buf;
 extern  Fr_buffer_info_type Fr_buffer_cfg_custom[MAX_MB_INDEX_SIZE]; 
 
 #define  BUS_CLOCK		   32000000	   //总线频率
-//#define  OSC_CLOCK		   16000000	   //晶振频率
-#define  OSC_CLOCK	        8000000	   // 小板子的时钟频率是8MHZ 
+#define  OSC_CLOCK		   16000000	   //晶振频率
+
+#define LEDCPU PORTD_PD0
+//#define  OSC_CLOCK	        8000000	   // 小板子的时钟频率是8MHZ 
 
 /*************************************************************/
 /*                      初始化锁相环                         */
@@ -264,11 +268,13 @@ uint8_t set_default_parm(T_MODBUS_REG *reg){
     gt_recv_buf.cur_used+=reg->gt_slot_conf[2].payload_length;
  
  
-    if(gt_recv_buf.cur_used>=MAX_DATA_BUF){
+    if(gt_recv_buf.cur_used>=MAX_DATA_BUF)
+    {
           //需要重新打乱重新计算。
-     }
+    }
 
-    if(calc_mb_index(reg)){
+    if(calc_mb_index(reg))
+    {
         
     }
              
@@ -278,17 +284,29 @@ uint8_t set_default_parm(T_MODBUS_REG *reg){
 
 uint8_t read_from_flash(T_MODBUS_REG *reg){
    uint16_t size;
+   uint16_t ReadSize;
    uint8_t * addr;
    size= sizeof(T_MODBUS_REG);
    addr= (uint8_t *)reg;
    
-   if(flash_read(addr, size)<size){
+   
+   
+   ReadSize=flash_read(addr, size);
+   printf("Read Flash Size %d =%d\r\n",ReadSize,size);
+   if(ReadSize<size)
+   {
         return 0;
-   } else{
+   } 
+   else
+   {
+      printf("reg->reserved_id=%X\r\n",reg->reserved_id);
        // 表示读取成功
-      if(reg->reserved_id==0x55){
+      if(reg->reserved_id==0x55)
+      {
           return 1;
-      } else{
+      } 
+      else
+      {
          return 0;
       }
    } 
@@ -325,6 +343,7 @@ void main(void)
 {
    uint8_t  buf[1024];
    uint16_t i;
+   uint8_t LEDFlag=0;
    
   uint16_t reset_num=0;
   DisableInterrupts;
@@ -332,34 +351,98 @@ void main(void)
   init_IPLL();
   
   DFlash_Init();
+  uart2_init();
+  printf("System Start\r\n");
+  //FlashTest(); 
   
-  if(!read_from_flash(&gt_modbus_reg)){
+  if(!read_from_flash(&gt_modbus_reg))
+  {
+     printf("Flash Error\r\n");
     //如果读出来的数据，无效，就重新配置成默认参数 
       set_default_parm(&gt_modbus_reg);
+  } 
+  else 
+  {
+    calc_mb_index(&gt_modbus_reg);
   }
+  
+  /*
+    headcrc_clac(0,0,reg->gt_slot_conf[2].frame_ID,reg->gt_slot_conf[2].payload_length);
+
+    reg->gt_slot_conf[3].frame_ID=20;
+    reg->gt_slot_conf[3].FrameType=0;	
+    reg->gt_slot_conf[3].buffer_type=FR_TRANSMIT_BUFFER;
+    reg->gt_slot_conf[3].receive_channel=FR_NO_CHANNEL;
+    reg->gt_slot_conf[3].base_circle=0;
+    reg->gt_slot_conf[3].base_circle_interval=0;
+    reg->gt_slot_conf[3].payload_length=14;
+    reg->gt_slot_conf[3].transmission_mode=FR_STATE_TRANSMISSION_MODE;
+    reg->gt_slot_conf[3].transmission_commit_mode=FR_STREAMING_COMMIT_MODE;
+    reg->gt_slot_conf[3].transmit_channel=FR_CHANNEL_AB;
+    
+    reg->gt_slot_conf[3].transmit_type=FR_DOUBLE_TRANSMIT_BUFFER;	
+    reg->gt_slot_conf[3].header_CRC=headcrc_clac(0,0,reg->gt_slot_conf[3].frame_ID,reg->gt_slot_conf[3].payload_length);
+    reg->gt_slot_conf[3].data=&gt_recv_buf.data[gt_recv_buf.cur_used];
+    gt_recv_buf.cur_used+=reg->gt_slot_conf[3].payload_length;
+    */
   
 
   //在这里做flash 的读取
   initialize_ect();
-  init_Peripheral();   
+  init_Peripheral(); 
+  DDRD_DDRD0=1;
+  printf("modbusInit\r\n");  
   modbusInit();
-  delay1ms(500); //延迟
+
+  //delay1ms(500); //延迟
+  printf("delay1ms\r\n");
   
   vfnFlexRay_Init();      //初始化FLEXRAY
   
+  printf("vfnFlexRay_Init\r\n");
+  
+  //TIM_Init();
+    
   COPCTL = 0x07;     //设置看门狗复位间隔为1.048576s 	
+
   EnableInterrupts;
-  for(;;) {
+  
+  
+  for(;;) 
+  {
+    uint8_t Lop=0;
+    if(g_SecFlag==1) 
+    {
+        g_SecFlag=0;
+        LEDCPU=LEDFlag;
+        LEDFlag=1-LEDFlag;
+        for(Lop=0;Lop<5;Lop++) 
+        {
+/*          if(gt_modbus_reg.gt_slot_conf[Lop].Circle&0X80) 
+          {
+              printf("Lop=%d Slot ID=%d,Circle:%d\r\n",
+              Lop,gt_modbus_reg.gt_slot_conf[Lop].frame_ID,
+              gt_modbus_reg.gt_slot_conf[Lop].Circle&0X7F);
+              
+              gt_modbus_reg.gt_slot_conf[Lop].Circle=0;
+          }*/
+        }
+    }
     modbusPoll();
    // vfnFlexRay_Handler(); // 这个是轮询的方式
     //这里保存数据，然后复位   最好有延迟
-    if(gt_modbus_reg.reserved_id==0x12){ 
-         if(reset_num==200){
+    if(gt_modbus_reg.reserved_id==0x12)
+    { 
+         if(reset_num==200)
+         {
              gt_modbus_reg.reserved_id=0x55;
              write_to_flash(&gt_modbus_reg);
+             printf("write_to_flash config\r\n");
              delay1ms(3000); //之后复位
              reset_num=0;
-         } else if(reset_num==100){
+         } 
+         else if(reset_num==100)
+         {
            
              DisableInterrupts;
              calc_mb_index(&gt_modbus_reg);
@@ -367,11 +450,15 @@ void main(void)
               EnableInterrupts;
              reset_num++; 
              _FEED_COP();
-         }else{
+         }
+         else
+         {
              _FEED_COP();
               reset_num++;
          }
-    } else{
+    } 
+    else
+    {
         _FEED_COP();  //喂狗函数 
         reset_num=0;  
     }

@@ -582,50 +582,62 @@ static void slot_buf_convert_struct(uint8_t *buf){
 	uint16 frame_ID;
     //一个序号代表一个 
     
-    listNum = buf[0];
-    frame_ID= swap_u16_from_u8(buf[1],buf[2]);	     
+  listNum = buf[0];
+  frame_ID= swap_u16_from_u8(buf[1],buf[2]);	     
 
 	frame_id_index=0;   
     //先判断该序号 
     //如果有相同的frame_id  就不能配置
-	for(i=0;i<MAX_SLOT_BUF_SIZE;i++){
-	    if(frame_id_index==0){
-	        if(gt_modbus_reg.gt_slot_conf[i].frame_ID==frame_ID){
+    /*
+	for(i=0;i<MAX_SLOT_BUF_SIZE;i++)
+	{
+	    if(frame_id_index==0)
+	    {
+	        if(gt_modbus_reg.gt_slot_conf[i].frame_ID==frame_ID)
+	        {
 	              frame_id_index=i;
+	              printf("Frame ID Exist Break\r\n");
 	              break;  
 	        }  
 	    }
 	}
+	*/
 	
-    if((frame_id_index==0)||(frame_id_index==listNum)){  
-         if((frame_id_index==listNum)&&(buf[10]<=gt_modbus_reg.gt_slot_conf[listNum].payload_length)) {
-            
-         } else{
-             gt_modbus_reg.gt_slot_conf[listNum].data=&gt_recv_buf.data[gt_recv_buf.cur_used];
-             gt_recv_buf.cur_used+=gt_modbus_reg.gt_slot_conf[listNum].payload_length; 
-             
-             if(gt_recv_buf.cur_used>=MAX_DATA_BUF){
-                  //需要重新打乱重新计算。
-             }
-         }
-   
-	     gt_modbus_reg.gt_slot_conf[listNum].frame_ID=frame_ID;
-	     gt_modbus_reg.gt_slot_conf[listNum].FrameType=buf[3];
-	     gt_modbus_reg.gt_slot_conf[listNum].buffer_type=swap_u16_from_u8(buf[4],buf[5]);
-	     gt_modbus_reg.gt_slot_conf[listNum].receive_channel=swap_u16_from_u8(buf[6],buf[7]);
-	     gt_modbus_reg.gt_slot_conf[listNum].base_circle=buf[8];
-	     gt_modbus_reg.gt_slot_conf[listNum].base_circle_interval=buf[9];
-	     gt_modbus_reg.gt_slot_conf[listNum].payload_length=buf[10];
-	     gt_modbus_reg.gt_slot_conf[listNum].transmission_mode=swap_u16_from_u8(buf[11],buf[12]);
-	     gt_modbus_reg.gt_slot_conf[listNum].transmission_commit_mode=swap_u16_from_u8(buf[13],buf[14]);
-	     gt_modbus_reg.gt_slot_conf[listNum].transmit_channel=swap_u16_from_u8(buf[15],buf[16]);
+  if((frame_id_index==0)||(frame_id_index==listNum))
+  {  
+     if((frame_id_index==listNum)&&(buf[10]<=gt_modbus_reg.gt_slot_conf[listNum].payload_length)) 
+     {
+        
+     } 
+     else
+     {
+         gt_modbus_reg.gt_slot_conf[listNum].data=&gt_recv_buf.data[gt_recv_buf.cur_used];
+         gt_recv_buf.cur_used+=gt_modbus_reg.gt_slot_conf[listNum].payload_length; 
          
-         if(gt_modbus_reg.gt_slot_conf[listNum].buffer_type==FR_TRANSMIT_BUFFER){
-             gt_modbus_reg.gt_slot_conf[listNum].header_CRC=headcrc_clac(0,0,gt_modbus_reg.gt_slot_conf[listNum].frame_ID,gt_modbus_reg.gt_slot_conf[listNum].payload_length);
+         if(gt_recv_buf.cur_used>=MAX_DATA_BUF)
+         {
+              //需要重新打乱重新计算。
          }
-         gt_modbus_reg.gt_slot_conf[listNum].transmit_type= FR_DOUBLE_TRANSMIT_BUFFER;
-         gt_modbus_reg.reserved_id=0x12; 
-    }
+     }
+ 
+     gt_modbus_reg.gt_slot_conf[listNum].frame_ID=frame_ID;
+     gt_modbus_reg.gt_slot_conf[listNum].FrameType=buf[3];
+     gt_modbus_reg.gt_slot_conf[listNum].buffer_type=swap_u16_from_u8(buf[4],buf[5]);
+     gt_modbus_reg.gt_slot_conf[listNum].receive_channel=swap_u16_from_u8(buf[6],buf[7]);
+     gt_modbus_reg.gt_slot_conf[listNum].base_circle=buf[8];
+     gt_modbus_reg.gt_slot_conf[listNum].base_circle_interval=buf[9];
+     gt_modbus_reg.gt_slot_conf[listNum].payload_length=buf[10];
+     gt_modbus_reg.gt_slot_conf[listNum].transmission_mode=swap_u16_from_u8(buf[11],buf[12]);
+     gt_modbus_reg.gt_slot_conf[listNum].transmission_commit_mode=swap_u16_from_u8(buf[13],buf[14]);
+     gt_modbus_reg.gt_slot_conf[listNum].transmit_channel=swap_u16_from_u8(buf[15],buf[16]);
+       
+     if(gt_modbus_reg.gt_slot_conf[listNum].buffer_type==FR_TRANSMIT_BUFFER)
+     {
+         gt_modbus_reg.gt_slot_conf[listNum].header_CRC=headcrc_clac(0,0,gt_modbus_reg.gt_slot_conf[listNum].frame_ID,gt_modbus_reg.gt_slot_conf[listNum].payload_length);
+     }
+     gt_modbus_reg.gt_slot_conf[listNum].transmit_type= FR_DOUBLE_TRANSMIT_BUFFER;
+     //gt_modbus_reg.reserved_id=0x12; 
+  }
 }
 
 
@@ -638,17 +650,22 @@ void  slot_struct_convert_buf(uint8_t *buf,uint8_t num){
      listNum = num;
         
      buf[buf_index]= num;
+     
      swap_u16_to_u8(gt_modbus_reg.gt_slot_conf[listNum].frame_ID,&buf[buf_index+1]);
+     
      buf[buf_index+3]=gt_modbus_reg.gt_slot_conf[listNum].FrameType;
+     
      swap_u16_to_u8(gt_modbus_reg.gt_slot_conf[listNum].buffer_type,&buf[buf_index+4]);
      swap_u16_to_u8(gt_modbus_reg.gt_slot_conf[listNum].receive_channel,&buf[buf_index+6]);
+     
      buf[buf_index+8]=gt_modbus_reg.gt_slot_conf[listNum].base_circle;
      buf[buf_index+9]=gt_modbus_reg.gt_slot_conf[listNum].base_circle_interval;
      buf[buf_index+10]=gt_modbus_reg.gt_slot_conf[listNum].payload_length;
+     
      swap_u16_to_u8(gt_modbus_reg.gt_slot_conf[listNum].transmission_mode,&buf[buf_index+11]);
      swap_u16_to_u8(gt_modbus_reg.gt_slot_conf[listNum].transmission_commit_mode,&buf[buf_index+13]);
-     swap_u16_to_u8(gt_modbus_reg.gt_slot_conf[listNum].transmit_channel,&buf[buf_index+14]);
-     buf[buf_index+17]=0;
+     swap_u16_to_u8(gt_modbus_reg.gt_slot_conf[listNum].transmit_channel,&buf[buf_index+15]);
+     buf[buf_index+16]=0;
 }
 
 
@@ -659,25 +676,28 @@ static void config_slot_func(void){
 	uint16_t num;
 	uint16_t i;
 	
-    uint8_t* dest_addr= (uint8_t *)&gt_modbus_reg.fr_conf;
+  uint8_t* dest_addr= (uint8_t *)&gt_modbus_reg.fr_conf;
+  
 	gt_modbus.rsp_code = RSP_OK;
 
-	if (gt_modbus.rx_count != 24){//								/* 03H命令必须是8个字节 */
+	if (gt_modbus.rx_count != 23){//								/* 03H命令必须是8个字节 */
 	
 		gt_modbus.rsp_code = RSP_ERR_VALUE;					/* 数据值域错误 */
+		printf("Config Len Erro=%dr\r\n",gt_modbus.rx_count);
 		goto err_ret;
 	}
-    slot_buf_convert_struct(&gt_modbus.rx_buf[4]);
+  slot_buf_convert_struct(&gt_modbus.rx_buf[4]);
     
 
 
 err_ret:
-	if (gt_modbus.rsp_code == RSP_OK){							/* 正确应答 */
+	if (gt_modbus.rsp_code == RSP_OK)
+	{							/* 正确应答 */
 		gt_modbus.tx_count = 0;
 		gt_modbus.tx_buf[gt_modbus.tx_count++] = (gt_modbus_reg.device_addr_reg&0xff);
 		gt_modbus.tx_buf[gt_modbus.tx_count++] = gt_modbus.rx_buf[1];
 		gt_modbus.tx_buf[gt_modbus.tx_count++] = gt_modbus.rx_buf[2];			/* 返回字节数 */
-        gt_modbus.tx_buf[gt_modbus.tx_count++] = gt_modbus.rx_buf[3];
+    gt_modbus.tx_buf[gt_modbus.tx_count++] = gt_modbus.rx_buf[3];
 
 		modbusSendWithCRC(gt_modbus.tx_buf, gt_modbus.tx_count);	/* 发送正确应答 */
 	}
@@ -692,35 +712,40 @@ err_ret:
 
 
 //读取SLOT     
-static void read_slot_func(void){
-   	uint16_t reg;
+static void read_slot_func(void)
+{
+  uint16_t reg;
 	uint16_t num;
 	uint16_t i;
 	uint8_t read_td;
 	uint16_t send_size;
-    uint8_t* dest_addr= (uint8_t *)&gt_modbus_reg.fr_conf;
+  uint8_t* dest_addr= (uint8_t *)&gt_modbus_reg.fr_conf;
 	gt_modbus.rsp_code = RSP_OK;
 
     send_size=sizeof(Fr_low_level_config_type);
     read_td= gt_modbus.rx_buf[4];
 
     
-	if (gt_modbus.rx_count != 7){//								/* 03H命令必须是8个字节 */
+	if (gt_modbus.rx_count != 7)
+	{//								/* 03H命令必须是8个字节 */
 		gt_modbus.rsp_code = RSP_ERR_VALUE;					/* 数据值域错误 */
 		goto err_ret;
 	}
  
 err_ret:
-	if (gt_modbus.rsp_code == RSP_OK){							/* 正确应答 */
+	if (gt_modbus.rsp_code == RSP_OK)
+	{							/* 正确应答 */
 		gt_modbus.tx_count = 0;
-		for(i=0;i<4;i++){
+		for(i=0;i<4;i++)
+		{
 		   gt_modbus.tx_buf[gt_modbus.tx_count++] =gt_modbus.rx_buf[i]; 
 		}
 		slot_struct_convert_buf(&gt_modbus.tx_buf[gt_modbus.tx_count],read_td);
 		gt_modbus.tx_count+=18;
 		modbusSendWithCRC(gt_modbus.tx_buf, gt_modbus.tx_count);	/* 发送正确应答 */
 	}
-	else{
+	else
+	{
 		modbusSendAckErr(gt_modbus.rsp_code);					/* 发送错误应答 */
 	}    
         
@@ -734,27 +759,36 @@ uint8_t  slot_read_data_buf(uint8_t *buf,uint8_t num){
      uint16_t *data;
      int i;
      
-     if(num>80 ||(gt_modbus_reg.gt_slot_conf[num].frame_ID==0)){
-          for(i=0;i<14;i++){
+     if(num>80 ||(gt_modbus_reg.gt_slot_conf[num].frame_ID==0))
+     {
+          for(i=0;i<14;i++)
+          {
               buf[i]=0;
           }
           return 14;
-     } else{
+     } 
+     else
+     {
  
          data=gt_modbus_reg.gt_slot_conf[num].data;
          
-         for(i=0;i<gt_modbus_reg.gt_slot_conf[num].payload_length;i++){
-              swap_u16_to_u8(data[i],&buf[i*2]);
+         buf[0]=gt_modbus_reg.gt_slot_conf[num].Circle;   //赋值数据如果有读到数据的话
+         
+         gt_modbus_reg.gt_slot_conf[num].Circle=0;
+         for(i=0;i<gt_modbus_reg.gt_slot_conf[num].payload_length;i++)
+         {
+              swap_u16_to_u8(data[i],&buf[i*2+1]);
          }
-         return (gt_modbus_reg.gt_slot_conf[num].payload_length*2);
+         return (gt_modbus_reg.gt_slot_conf[num].payload_length*2+1);
      }
 }
 
 
 
 
-static void read_slot_data_func(void){
-   	uint16_t reg;
+static void read_slot_data_func(void)
+{
+  uint16_t reg;
 	uint16_t num;
 	uint16_t i;
 	uint8_t  list_num;
@@ -762,37 +796,46 @@ static void read_slot_data_func(void){
 
 	gt_modbus.rsp_code = RSP_OK;
     
-    list_num= gt_modbus.rx_buf[3];
+  list_num= gt_modbus.rx_buf[3];
 
-	if (gt_modbus.rx_count != 6){//								/* 03H命令必须是8个字节 */
+	if (gt_modbus.rx_count != 6)
+	{//								/* 03H命令必须是8个字节 */
 		gt_modbus.rsp_code = RSP_ERR_VALUE;					/* 数据值域错误 */
 		goto err_ret;
 	}
  
 err_ret:
-	if (gt_modbus.rsp_code == RSP_OK){							/* 正确应答 */
+	if (gt_modbus.rsp_code == RSP_OK)
+	{							/* 正确应答 */
 		gt_modbus.tx_count = 0;
-		for(i=0;i<4;i++){
+		for(i=0;i<4;i++)
+		{
 		   gt_modbus.tx_buf[gt_modbus.tx_count++] =gt_modbus.rx_buf[i]; 
 		}
-    	gt_modbus.tx_count+=slot_read_data_buf(&gt_modbus.tx_buf[gt_modbus.tx_count],list_num);
+    gt_modbus.tx_count+=slot_read_data_buf(&gt_modbus.tx_buf[gt_modbus.tx_count],list_num);
 		modbusSendWithCRC(gt_modbus.tx_buf, gt_modbus.tx_count);	/* 发送正确应答 */
 	}
-	else{
+	else
+	{
 		modbusSendAckErr(gt_modbus.rsp_code);					/* 发送错误应答 */
 	}    
 }
 
-uint8_t  send_slot_data(uint8_t *buf,uint8_t num) {
+uint8_t  send_slot_data(uint8_t *buf,uint8_t num) 
+{
  
     int i=0;
     uint16_t *data; 
-    if(num>80 ||(gt_modbus_reg.gt_slot_conf[num].frame_ID==0)){
+    if(num>80 ||(gt_modbus_reg.gt_slot_conf[num].frame_ID==0))
+    {
           return 0;
-     } else{
+     } 
+     else
+     {
          data=gt_modbus_reg.gt_slot_conf[num].data;
          
-         for(i=0;i<gt_modbus_reg.gt_slot_conf[num].payload_length;i++){
+         for(i=0;i<gt_modbus_reg.gt_slot_conf[num].payload_length;i++)
+         {
               data[i]=swap_u16_from_u8(buf[i*2],buf[i*2+1]);
          }
          return (gt_modbus_reg.gt_slot_conf[num].payload_length*2);
@@ -800,8 +843,9 @@ uint8_t  send_slot_data(uint8_t *buf,uint8_t num) {
  }
 
 
-static void send_slot_data_func(void){
-   	uint16_t reg;
+static void send_slot_data_func(void)
+{
+  uint16_t reg;
 	uint16_t num;
 	uint16_t i;
 	uint8_t  list_num;
@@ -809,7 +853,7 @@ static void send_slot_data_func(void){
 
 	gt_modbus.rsp_code = RSP_OK;
     
-    list_num= gt_modbus.rx_buf[3];
+  list_num= gt_modbus.rx_buf[3];
 
     //这个大小等会儿在弄
     /*
@@ -821,16 +865,19 @@ static void send_slot_data_func(void){
 	send_size= send_slot_data(&gt_modbus.tx_buf[4],list_num);
 
 err_ret:
-	if (gt_modbus.rsp_code == RSP_OK){							/* 正确应答 */
+	if (gt_modbus.rsp_code == RSP_OK)
+	{							/* 正确应答 */
 		gt_modbus.tx_count = 0;
-		for(i=0;i<4;i++){
+		for(i=0;i<4;i++)
+		{
 		   gt_modbus.tx_buf[gt_modbus.tx_count++] =gt_modbus.rx_buf[i]; 
 		}
 		
 		gt_modbus.tx_buf[gt_modbus.tx_count++]=send_size;
 		modbusSendWithCRC(gt_modbus.tx_buf, gt_modbus.tx_count);	/* 发送正确应答 */
 	}
-	else{
+	else
+	{
 		modbusSendAckErr(gt_modbus.rsp_code);					/* 发送错误应答 */
 	}    
 }
@@ -870,23 +917,46 @@ static void modbusAnalyzeApp(void){
     second_addr=((gt_modbus.rx_buf[1]<<8)|gt_modbus.rx_buf[2]);
     op_code=gt_modbus.rx_buf[3];
     
-    if(second_addr==1){
-        if(op_code==2){         //配置CC寄存器 
+    if(second_addr==1)
+    {
+      if(op_code==2)
+      {         //配置CC寄存器 
 		    config_cc_func();  
-		} else if(op_code==4){    //读取CC寄存器 
-		    read_cc_func();  //这2个有点冲突 
-		} else if(op_code==3){
-		    config_slot_func(); 
-		}else if(op_code==5){
-		    read_slot_func(); 
-		}
-    } else if(second_addr==3){
+		  } 
+  		else if(op_code==4)
+  		{    //读取CC寄存器 
+  		    read_cc_func();  //这2个有点冲突 
+  		} 
+  		else if(op_code==3)
+  		{
+  		    config_slot_func(); 
+  		    printf("config_slot_func\r\n");
+  		}
+  		else if(op_code==5)
+  		{
+  		    read_slot_func(); 
+  		    printf("read_slot_func\r\n");
+  		}
+  		else if(op_code==6)
+  		{
+  		    //read_slot_func();
+  		    gt_modbus_reg.reserved_id=0x12; 
+  		    printf("write to flash_slot_func\r\n");
+  		}
+    } 
+    else if(second_addr==3)
+    {
         read_slot_data_func(); //读取slot 的数据
-    } else if(second_addr==4){  //发送数据 
-        send_slot_data_func();  
-    }else{
-		gt_modbus.rsp_code = RSP_ERR_CMD;
-		modbusSendAckErr(gt_modbus.rsp_code);	/* 告诉主机命令错误 */
+    } 
+    else if(second_addr==4)
+    {  //发送数据 
+        send_slot_data_func(); 
+        printf("send_slot_data_func\r\n"); 
+    }
+    else
+    {
+  		gt_modbus.rsp_code = RSP_ERR_CMD;
+  		modbusSendAckErr(gt_modbus.rsp_code);	/* 告诉主机命令错误 */
     }
         
         
@@ -927,16 +997,20 @@ void modbusPoll(void)
 	/* 计算CRC校验和 */
 	crc1 = CRC16_Modbus(gt_modbus.rx_buf, gt_modbus.rx_count);
 	if (crc1 != 0){
+	printf("CRC ERROR\r\n");
 		goto err_ret;
 	}
+	printf("Get Date Len =%d\r\n",gt_modbus.rx_count);
 
 	/* 站地址 (1字节） */
 	addr = gt_modbus.rx_buf[0];				/* 第1字节 站号 */
     
-	if (addr != (gt_modbus_reg.device_addr_reg&0xff)){	/* 判断主机发送的命令地址是否符合 */
+	if (addr != (gt_modbus_reg.device_addr_reg&0xff))
+	{	/* 判断主机发送的命令地址是否符合 */
 		goto err_ret;
 	}
 
+  printf("Decode Code\r\n");
 	/* 分析应用层协议 */
 	modbusAnalyzeApp();						
 	
@@ -998,21 +1072,28 @@ uint8_t calc_mb_index(T_MODBUS_REG *reg){
     T_slot_conf temp_slot_slot;
     //先是接收，然后发送 
     
-   for(i=0;i<MAX_MB_INDEX_SIZE;i++){
+   for(i=0;i<MAX_MB_INDEX_SIZE;i++)
+   {
         mb_index[i].mb_index=FR_LAST_MB;
         mb_index[i].slot=0xff;
-  }
+    }
        //发送 
-    for(i=0;i<MAX_SLOT_BUF_SIZE;i++){
-        if(reg->gt_slot_conf[i].frame_ID!=0){
-           if(reg->gt_slot_conf[i].buffer_type==FR_TRANSMIT_BUFFER) {
+    for(i=0;i<MAX_SLOT_BUF_SIZE;i++)
+    {
+        if(reg->gt_slot_conf[i].frame_ID!=0)
+        {
+           if(reg->gt_slot_conf[i].buffer_type==FR_TRANSMIT_BUFFER) 
+           {
 
-               if(reg->gt_slot_conf[i].transmit_type==FR_DOUBLE_TRANSMIT_BUFFER){
+               if(reg->gt_slot_conf[i].transmit_type==FR_DOUBLE_TRANSMIT_BUFFER)
+               {
                     mb_index[index].mb_index=mb_used_index;
                     mb_index[index].slot=i; 
                     reg->gt_slot_conf[i].start_mb_index= mb_used_index;
                     mb_used_index+=2;
-               } else{
+               } 
+               else
+               {
                     mb_index[index].mb_index=mb_used_index;
                     mb_index[index].slot=i; 
                     reg->gt_slot_conf[i].start_mb_index= mb_used_index;

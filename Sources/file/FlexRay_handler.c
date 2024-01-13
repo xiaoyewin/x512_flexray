@@ -11,6 +11,7 @@
 /** Configuration data for the FlexRay node */
 #include "Fr_UNIFIED_cfg.h"
 #include "modbus_rtu.h"
+#include "stdio.h"
 
 extern T_MODBUS_REG gt_modbus_reg;
 extern T_MB_Index mb_index[MAX_MB_INDEX_SIZE]; 				
@@ -80,7 +81,8 @@ void Failed(uint8 u8number)
 
 //需要做一个通用函数 
 
-void CC_interrupt_slot_recv_func(uint8 buffer_idx) {
+void CC_interrupt_slot_recv_func(uint8 buffer_idx) 
+{
     //根据这个函数算出  
           //复制接收到的数据到缓冲区
     int i=0;
@@ -90,27 +92,34 @@ void CC_interrupt_slot_recv_func(uint8 buffer_idx) {
     uint8 *Fr_data_length_ptr;
  
     
-    for(i=0;i<MAX_MB_INDEX_SIZE;i++){
-         if(mb_index[i].mb_index==buffer_idx){
+    for(i=0;i<MAX_MB_INDEX_SIZE;i++)
+    {
+         if(mb_index[i].mb_index==buffer_idx)
+         {
              break;
          }
     }
     list_num=255;
-    if(i!=MAX_MB_INDEX_SIZE){
+    if(i!=MAX_MB_INDEX_SIZE)
+    {
        list_num=mb_index[i].slot;   
     }
     Fr_get_global_time(&current_cycle, &current_macrotick); 
     //这个得到当前的循环周期
-   // circle_num = (uint8_t)(Fr_CC_reg_ptr[FrCYCTR]);  
+    gt_modbus_reg.gt_slot_conf[list_num].Circle = current_cycle;//(uint8_t)(Fr_CC_reg_ptr[FrCYCTR]);  
+	  gt_modbus_reg.gt_slot_conf[list_num].Circle|=0X80;   
 	                    
-	if(list_num==255){  //那表示没有
+	if(list_num==255)
+	{  //那表示没有
 	   	 Fr_data_length_ptr= &rx_data_length;
 	     Fr_data_ptr=&rx_data_4[0]; 
 	}
-	else{
-	      Fr_data_ptr= gt_modbus_reg.gt_slot_conf[list_num].data ;
+	else
+	{
+	      Fr_data_ptr= gt_modbus_reg.gt_slot_conf[list_num].data;
 	      Fr_data_length_ptr=&gt_modbus_reg.gt_slot_conf[list_num].payload_length;
-          rx_return_value = Fr_receive_data(buffer_idx,Fr_data_ptr,Fr_data_length_ptr
+	      
+        rx_return_value = Fr_receive_data(buffer_idx,Fr_data_ptr,Fr_data_length_ptr
                                   , &rx_status_slot);
 	}                              
 }
@@ -124,13 +133,17 @@ void CC_interrupt_slot_send_func(uint8 buffer_idx) {
     //发射需要考虑到双内存   
     int i=0; 
     uint8_t list_num;
-    for(i=0;i<MAX_MB_INDEX_SIZE;i++){
-         if(mb_index[i].mb_index==buffer_idx){
+    for(i=0;i<MAX_MB_INDEX_SIZE;i++)
+    {
+         if(mb_index[i].mb_index==buffer_idx)
+         {
            //表示找到了
              break;
          }
-         else if((mb_index[i].mb_index+1)==buffer_idx){
-            if(gt_modbus_reg.gt_slot_conf[mb_index[i].slot].transmit_type==FR_DOUBLE_TRANSMIT_BUFFER){
+         else if((mb_index[i].mb_index+1)==buffer_idx)
+         {
+            if(gt_modbus_reg.gt_slot_conf[mb_index[i].slot].transmit_type==FR_DOUBLE_TRANSMIT_BUFFER)
+            {
                 break;
             }
          }
@@ -143,13 +156,16 @@ void CC_interrupt_slot_send_func(uint8 buffer_idx) {
     //这个得到当前的循环周期
    // circle_num = (uint8_t)(Fr_CC_reg_ptr[FrCYCTR]);  
 	                    
-	if(list_num==255){  //那表示没有
+	if(list_num==255)
+	{  //那表示没有
 
 	}
-	else{
+	else
+	{
 	
      	tx_return_value = Fr_transmit_data(mb_index[i].mb_index, &gt_modbus_reg.gt_slot_conf[list_num].data, gt_modbus_reg.gt_slot_conf[list_num].payload_length);
-     	if(mb_index[i].mb_index!=buffer_idx){
+     	if(mb_index[i].mb_index!=buffer_idx)
+     	{
      	     Fr_clear_MB_interrupt_flag(TX_SLOT_1_TRANSMIT_SIDE);
      	}
 	}     
@@ -373,15 +389,19 @@ void vfnFlexRay_Init(){
 
     //使能FlexRay CC并进入FR_POCSTATE_CONFIG
     return_value = Fr_init(&Fr_HW_cfg_00, &gt_modbus_reg.fr_conf);
+    printf("Fr_init\r\n");
     //如果不成功，则等待 
     //if(return_value == FR_NOT_SUCCESS)
     //        Failed(1);  
 
     //初始化参数
     Fr_set_configuration(&Fr_HW_cfg_00, &gt_modbus_reg.fr_conf);
+    printf("Fr_set_configuration\r\n");
     
     //初始化所有BUFFER
     Fr_buffers_init_custom(gt_modbus_reg.gt_slot_conf,mb_index);
+    
+    printf("Fr_buffers_init_custom\r\n");
    // Fr_buffers_init(&Fr_buffer_cfg_00[0], &Fr_buffer_cfg_set_00[0]);
     
 
@@ -391,14 +411,19 @@ void vfnFlexRay_Init(){
    // Fr_set_MB_callback(&CC_interrupt_slot_1, TX_SLOT_1_TRANSMIT_SIDE);  
 
 
-    for(i=0;i<MAX_SLOT_BUF_SIZE;i++){
-        if(gt_modbus_reg.gt_slot_conf[i].buffer_type==FR_TRANSMIT_BUFFER){
-            if(gt_modbus_reg.gt_slot_conf[i].transmit_type==FR_DOUBLE_TRANSMIT_BUFFER){
+    for(i=0;i<MAX_SLOT_BUF_SIZE;i++)
+    {
+      printf("Fr_set_MB_callback\r\n");
+        if(gt_modbus_reg.gt_slot_conf[i].buffer_type==FR_TRANSMIT_BUFFER)
+        {
+            if(gt_modbus_reg.gt_slot_conf[i].transmit_type==FR_DOUBLE_TRANSMIT_BUFFER)
+            {
                 Fr_set_MB_callback(&CC_interrupt_slot_send_func, gt_modbus_reg.gt_slot_conf[i].start_mb_index+1);    
             }
             Fr_set_MB_callback(&CC_interrupt_slot_send_func, gt_modbus_reg.gt_slot_conf[i].start_mb_index);  
         }
-        if(gt_modbus_reg.gt_slot_conf[i].buffer_type==FR_RECEIVE_BUFFER){
+        if(gt_modbus_reg.gt_slot_conf[i].buffer_type==FR_RECEIVE_BUFFER)
+        {
             Fr_set_MB_callback(&CC_interrupt_slot_recv_func, gt_modbus_reg.gt_slot_conf[i].start_mb_index);  
         }	        
 	}
@@ -412,6 +437,7 @@ void vfnFlexRay_Init(){
 
     //初始化定时器
     Fr_timers_init(&Fr_timers_cfg_00_ptr[0]);
+    printf("Fr_timers_init\r\n");
 
     //设置定时器1产生中断时的调用函数
     Fr_set_protocol_0_IRQ_callback(&CC_interrupt_timer_1, FR_TIMER_1_EXPIRED_IRQ);
@@ -492,22 +518,27 @@ void vfnFlexRay_Handler(void){
 
     uint16_t i;
     Fr_tx_status_type tx_status;    
-    boolean cycle_starts = FALSE;  
+    boolean cycle_starts = FALSE;
+    printf("vfnFlexRay_Handler\r\n");   
     //检查传输循环是否已经开始
     cycle_starts = Fr_check_cycle_start(&current_cycle);
         
-        if(cycle_starts){    //是否开始
-        
-            for(i=0;i<MAX_SLOT_BUF_SIZE;i++){
-                if(gt_modbus_reg.gt_slot_conf[i].buffer_type==FR_TRANSMIT_BUFFER){
-                    tx_status = Fr_check_tx_status(gt_modbus_reg.gt_slot_conf[i].start_mb_index);
-                    //检查数据是否发送
-                    if(tx_status == FR_TRANSMITTED){
-                        //更新MB数据
-                         Fr_transmit_data(gt_modbus_reg.gt_slot_conf[i].start_mb_index, gt_modbus_reg.gt_slot_conf[i].data, gt_modbus_reg.gt_slot_conf[i].payload_length);  
-                     } 
-                }	        
-            }
-        }
+      if(cycle_starts)
+      {    //是否开始
+      
+          for(i=0;i<MAX_SLOT_BUF_SIZE;i++)
+          {
+              if(gt_modbus_reg.gt_slot_conf[i].buffer_type==FR_TRANSMIT_BUFFER)
+              {
+                  tx_status = Fr_check_tx_status(gt_modbus_reg.gt_slot_conf[i].start_mb_index);
+                  //检查数据是否发送
+                  if(tx_status == FR_TRANSMITTED)
+                  {
+                      //更新MB数据
+                      Fr_transmit_data(gt_modbus_reg.gt_slot_conf[i].start_mb_index, gt_modbus_reg.gt_slot_conf[i].data, gt_modbus_reg.gt_slot_conf[i].payload_length);  
+                   } 
+              }	        
+          }
+      }
             //检查接收状态
 }

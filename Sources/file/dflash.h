@@ -11,7 +11,7 @@ void DFlash_Erase(word ADDR16);
 
 uint16_t flash_read(uint8_t *addr, uint16_t size);
 uint16_t flash_write(uint8_t *addr, uint16_t size);
-
+void FlashTest(void); 
 
 #endif
 

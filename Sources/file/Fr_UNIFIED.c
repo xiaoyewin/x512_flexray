@@ -1506,7 +1506,10 @@ Fr_return_type Fr_buffers_init_custom(T_slot_conf *slot,T_MB_Index *mb_index)
     temp_index = 0;     // Clear index
     
    
-    while(mb_index[temp_index].mb_index != FR_LAST_MB){   // Configure all required MBs
+    while(mb_index[temp_index].mb_index != FR_LAST_MB&&temp_index<32)
+    {   
+        printf("mb_index=%d inde=%x\r\n",temp_index,mb_index[temp_index].mb_index);
+        // Configure all required MBs
         Fr_buffer_info_set_index = mb_index[temp_index].slot;    // Store configuration index
         // Temporary offset address of MB registers
         Fr_MB_registers_offset_add_temp = mb_index[temp_index].mb_index * 4;

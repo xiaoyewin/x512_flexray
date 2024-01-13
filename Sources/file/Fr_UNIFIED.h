@@ -865,12 +865,12 @@ typedef struct
 //frame_ID 和 list_num 有个对应的关系 
 
 typedef struct slot_conf{
-    uint16 frame_ID;
-    uint8 FrameType;	//帧类型 静态 或动态
-    Fr_buffer_type buffer_type;           // TRANSMIT, RECEIVE, SHADOW or FIFO
-    Fr_channel_type receive_channel;
+  uint16 frame_ID;
+  uint8 FrameType;	//帧类型 静态 或动态
+  Fr_buffer_type buffer_type;           // TRANSMIT, RECEIVE, SHADOW or FIFO
+  Fr_channel_type receive_channel;
 	uint8 base_circle ;
-    uint8 base_circle_interval;
+  uint8 base_circle_interval;
 	uint8 payload_length;                    //负载长度
 	Fr_transmission_type         transmission_mode;    //事件还是状态
 	Fr_transmission_commit_type transmission_commit_mode;     
@@ -878,9 +878,10 @@ typedef struct slot_conf{
 	
 	//下面暂时不进行交互	                 
 	Fr_transmit_MB_type transmit_type;
-    uint16_t header_CRC; //发送的CRC
+  uint16_t header_CRC; //发送的CRC
     
-    uint8_t  start_mb_index; //对用的开始的MB
+  uint8_t  start_mb_index; //对用的开始的MB
+  uint8_t Circle;     //周期         第一个Bit 为接收接收标志位
 	uint16_t *data;//存放起始的地址  
 } T_slot_conf;
 
